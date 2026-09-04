@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
 
 const Register = () => {
@@ -11,30 +12,20 @@ const Register = () => {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [profileImage, setProfileImage] = useState(null);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  // Handle inputs
+  const navigate = useNavigate();
+
   const handleChange = (e) => {
     setForm({
       ...form,
       [e.target.name]: e.target.value,
     });
-
     setError("");
   };
 
-  // Profile picture
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-
-    if (file) {
-      setProfileImage(URL.createObjectURL(file));
-    }
-  };
-
-  // Simple static validation
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!form.name || !form.email || !form.password || !form.confirmPassword) {
@@ -53,36 +44,53 @@ const Register = () => {
     }
 
     setError("");
-    alert("Account created successfully!");
+    setLoading(true);
+
+    try {
+      const res = await fetch("http://localhost:5000/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          password: form.password,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.message || "Registration failed.");
+        setLoading(false);
+        return;
+      }
+
+      navigate(`/verify-otp?email=${encodeURIComponent(form.email)}`);
+    } catch (err) {
+      setError("Something went wrong. Please try again.");
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-[#F7F6F2] px-4 py-4 font-[Manrope] text-[#474A57] sm:px-6">
-      {/* =========================
-          MAIN CONTAINER
-      ========================= */}
       <div className="mx-auto grid min-h-[calc(100vh-32px)] max-w-[750px] overflow-hidden rounded-[16px] border border-[#EAE8E2] bg-white shadow-[0_1px_2px_rgba(40,38,30,0.04),0_6px_20px_rgba(40,38,30,0.05)] lg:grid-cols-2">
-        {/* =========================
-            LEFT BRAND PANEL
-        ========================= */}
+        {/* Left Side */}
         <div className="relative hidden overflow-hidden bg-[#EAF2E7] p-8 lg:flex lg:flex-col">
-          {/* Decorative gradients */}
           <div className="absolute -left-24 -top-24 h-[360px] w-[360px] rounded-full bg-[#B4A7D6]/15 blur-3xl" />
           <div className="absolute -bottom-32 -right-24 h-[360px] w-[360px] rounded-full bg-[#F0B860]/15 blur-3xl" />
 
-          {/* Decorative dots */}
           <span className="absolute right-7 top-6 h-3 w-3 rounded-full bg-[#F0B860]" />
           <span className="absolute right-14 top-11 h-2 w-2 rounded-full bg-[#E8836C]" />
           <span className="absolute bottom-16 left-5 h-2.5 w-2.5 rounded-full bg-[#B4A7D6]" />
 
-          {/* Logo */}
           <div className="relative flex items-center gap-2.5">
             <img src={logo} alt="Tasky" className="h-6 w-6 object-contain" />
-
             <span className="text-[17px] font-bold">Tasky</span>
           </div>
 
-          {/* Text */}
           <div className="relative mt-10 max-w-[330px]">
             <h1 className="text-[27px] font-extrabold leading-[1.2] tracking-[-0.015em]">
               Start your first list in under a minute.
@@ -94,9 +102,7 @@ const Register = () => {
             </p>
           </div>
 
-          {/* Floating task cards */}
           <div className="relative mt-8 flex-1">
-            {/* Card 1 */}
             <div className="absolute left-1 top-0 z-10 w-[250px] -rotate-[4deg] rounded-xl border border-[#EAE8E2] bg-white p-3 shadow-[0_10px_25px_rgba(70,70,50,0.10)]">
               <MiniTask
                 completed
@@ -114,7 +120,6 @@ const Register = () => {
               />
             </div>
 
-            {/* Card 2 */}
             <div className="absolute left-[70px] top-[60px] z-20 w-[250px] rotate-[3deg] rounded-xl border border-[#EAE8E2] bg-white p-3 shadow-[0_10px_25px_rgba(70,70,50,0.10)]">
               <MiniTask
                 title="Buy groceries for the week"
@@ -133,10 +138,9 @@ const Register = () => {
             </div>
           </div>
 
-          {/* Quote */}
           <div className="relative mt-auto border-t border-[#474A57]/10 pt-4">
             <p className="font-serif text-[14px] italic leading-[1.45]">
-              “A clear list is a clear mind.”
+              "A clear list is a clear mind."
             </p>
 
             <span className="mt-1.5 block text-[11px] font-semibold text-[#8A8D99]">
@@ -145,12 +149,9 @@ const Register = () => {
           </div>
         </div>
 
-        {/* =========================
-            RIGHT FORM PANEL
-        ========================= */}
+        {/* Right Side */}
         <div className="flex items-center justify-center px-4 py-5 sm:px-6 lg:px-8">
           <div className="w-full max-w-[300px]">
-            {/* Header */}
             <div>
               <h2 className="text-[20px] font-extrabold tracking-[-0.01em]">
                 Create your account
@@ -162,7 +163,7 @@ const Register = () => {
             </div>
 
             <form onSubmit={handleSubmit}>
-              {/* Full name */}
+              {/* Name */}
               <div className="mt-3">
                 <label className="mb-1 block text-[11px] font-bold">
                   Full name
@@ -220,7 +221,7 @@ const Register = () => {
                 </div>
               </div>
 
-              {/* Confirm password */}
+              {/* Confirm Password */}
               <div className="mt-2.5">
                 <label className="mb-1 block text-[11px] font-bold">
                   Confirm password
@@ -246,40 +247,6 @@ const Register = () => {
                 </div>
               </div>
 
-              {/* Profile picture */}
-              <div className="mt-3">
-                <p className="mb-1.5 text-[10px] text-[#8A8D99]">
-                  Add a profile picture —{" "}
-                  <b className="font-bold text-[#474A57]">optional</b>
-                </p>
-
-                <div className="flex items-center gap-3">
-                  {/* Avatar */}
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border-[1.4px] border-dashed border-[#B7B9C2] bg-[#F7F6F2]">
-                    {profileImage ? (
-                      <img
-                        src={profileImage}
-                        alt="Profile preview"
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <UserIcon />
-                    )}
-                  </div>
-
-                  {/* Upload */}
-                  <label className="cursor-pointer rounded-lg border-[1.4px] border-[#EAE8E2] bg-[#F7F6F2] px-3 py-1.5 text-[11px] font-bold text-[#6B9463] transition hover:bg-[#EAF2E7]">
-                    Upload photo
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                      className="hidden"
-                    />
-                  </label>
-                </div>
-              </div>
-
               {/* Error */}
               {error && (
                 <div className="mt-2 rounded-lg bg-[#FBEBE6] px-2.5 py-1.5 text-center text-[10.5px] font-semibold text-[#E8836C]">
@@ -290,12 +257,13 @@ const Register = () => {
               {/* Submit */}
               <button
                 type="submit"
-                className="mt-3 w-full rounded-[8px] bg-[#8CAF82] py-2 text-[12.5px] font-bold text-white transition-all duration-200 hover:-translate-y-[1px] hover:bg-[#6B9463]"
+                disabled={loading}
+                className="mt-3 w-full rounded-[8px] bg-[#8CAF82] py-2 text-[12.5px] font-bold text-white transition-all duration-200 hover:-translate-y-[1px] hover:bg-[#6B9463] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Create account
+                {loading ? "Creating account..." : "Create account"}
               </button>
 
-              {/* Sign in link */}
+              {/* Login Link */}
               <div className="mt-3 text-center text-[11px] text-[#8A8D99]">
                 Already have an account?{" "}
                 <a
@@ -313,14 +281,9 @@ const Register = () => {
   );
 };
 
-/* =====================================================
-   MINI TASK COMPONENT
-===================================================== */
-
 const MiniTask = ({ completed = false, title, description, tag, tagClass }) => {
   return (
     <div className="flex items-start gap-2 border-t border-[#EAE8E2] py-2 first:border-t-0">
-      {/* Checkbox */}
       <div
         className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-[5px] border ${
           completed ? "border-[#8CAF82] bg-[#8CAF82]" : "border-[#B7B9C2]"
@@ -339,7 +302,6 @@ const MiniTask = ({ completed = false, title, description, tag, tagClass }) => {
         )}
       </div>
 
-      {/* Text */}
       <div className="min-w-0 flex-1">
         <div
           className={`text-[10.5px] font-bold ${
@@ -352,7 +314,6 @@ const MiniTask = ({ completed = false, title, description, tag, tagClass }) => {
         <div className="mt-0.5 text-[9px] text-[#8A8D99]">{description}</div>
       </div>
 
-      {/* Tag */}
       <span
         className={`rounded-full px-1.5 py-0.5 text-[8px] font-bold ${tagClass}`}
       >
@@ -361,10 +322,6 @@ const MiniTask = ({ completed = false, title, description, tag, tagClass }) => {
     </div>
   );
 };
-
-/* =====================================================
-   EYE ICON
-===================================================== */
 
 const EyeIcon = ({ visible }) => {
   return visible ? (
@@ -391,34 +348,12 @@ const EyeIcon = ({ visible }) => {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-
       <path
         d="M6.5 17.2C4.7 16 3.2 14.3 2 12"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-
       <path d="M2 2l20 20" strokeLinecap="round" />
-    </svg>
-  );
-};
-
-/* =====================================================
-   USER ICON
-===================================================== */
-
-const UserIcon = () => {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      className="h-5 w-5 text-[#B7B9C2]"
-    >
-      <circle cx="12" cy="8" r="3.5" />
-
-      <path d="M5 20c1.4-3.8 4.4-6 7-6s5.6 2.2 7 6" strokeLinecap="round" />
     </svg>
   );
 };

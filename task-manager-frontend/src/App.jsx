@@ -3,6 +3,7 @@ import Login from "./Components/login.jsx";
 import LandingPage from "./Components/Landing.jsx";
 import Dashboard from "./Components/dashboard.jsx";
 import Register from "./Components/register.jsx";
+import VerifyCode from "./Components/verifyotp.jsx";
 const router = createBrowserRouter([
   {
     path: "/",
@@ -22,6 +23,10 @@ const router = createBrowserRouter([
       {
         path: "register",
         element: <Register />,
+      },
+      {
+        path: "verifyotp",
+        element: <VerifyCode />,
       },
     ],
   },
