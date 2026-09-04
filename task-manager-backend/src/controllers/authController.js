@@ -1,5 +1,9 @@
 const pool = require("../config/db");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const sendOtpEmail = require("../config/mailer");
+const generateOtp = () =>
+  Math.floor(100000 + Math.random() * 900000).toString();
 
 const login = async (req, res) => {
   try {
@@ -66,6 +70,129 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = {
-  login,
+// REGISTER
+const register = async (req, res) => {
+  const { name, email, password, role } = req.body;
+
+  if (!name || !email || !password) {
+    return res.status(400).json({ message: "All fields are required." });
+  }
+
+  try {
+    const existing = await pool.query(
+      "SELECT user_id, is_verified FROM users WHERE email = $1",
+      [email]
+    );
+
+    if (existing.rows.length > 0 && existing.rows[0].is_verified) {
+      return res.status(409).json({ message: "Email already registered." });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const otp = generateOtp();
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+
+    if (existing.rows.length > 0 && !existing.rows[0].is_verified) {
+      // Unverified account already exists -> update it instead of duplicating
+      await pool.query(
+        `UPDATE users
+         SET user_name = $1, password = $2, otp_code = $3, otp_expires = $4, role = $5
+         WHERE email = $6`,
+        [name, hashedPassword, otp, otpExpires, role || "user", email]
+      );
+    } else {
+      await pool.query(
+        `INSERT INTO users (user_name, email, password, otp_code, otp_expires, role, is_verified)
+         VALUES ($1, $2, $3, $4, $5, $6, FALSE)`,
+        [name, email, hashedPassword, otp, otpExpires, role || "user"]
+      );
+    }
+
+    await sendOtpEmail(email, otp);
+
+    res.status(201).json({ message: "OTP sent to email.", email });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error." });
+  }
 };
+
+// VERIFY OTP
+const verifyOtp = async (req, res) => {
+  const { email, otp } = req.body;
+
+  try {
+    const result = await pool.query("SELECT * FROM users WHERE email = $1", [
+      email,
+    ]);
+    const user = result.rows[0];
+
+    if (!user) return res.status(404).json({ message: "User not found." });
+    if (user.is_verified)
+      return res.status(400).json({ message: "Already verified." });
+    if (user.otp_code !== otp)
+      return res.status(400).json({ message: "Invalid OTP." });
+    if (new Date() > new Date(user.otp_expires)) {
+      return res.status(400).json({ message: "OTP expired." });
+    }
+
+    await pool.query(
+      `UPDATE users SET is_verified = TRUE, otp_code = NULL, otp_expires = NULL WHERE email = $1`,
+      [email]
+    );
+
+    const token = jwt.sign(
+      { id: user.user_id, email: user.email, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.status(200).json({
+      message: "Account verified.",
+      token,
+      user: {
+        id: user.user_id,
+        name: user.user_name,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error." });
+  }
+};
+
+// RESEND OTP
+const resendOtp = async (req, res) => {
+  const { email } = req.body;
+  try {
+    const result = await pool.query("SELECT * FROM users WHERE email = $1", [
+      email,
+    ]);
+    const user = result.rows[0];
+    if (!user) return res.status(404).json({ message: "User not found." });
+    if (user.is_verified)
+      return res.status(400).json({ message: "Already verified." });
+
+    const otp = generateOtp();
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+
+    await pool.query(
+      "UPDATE users SET otp_code = $1, otp_expires = $2 WHERE email = $3",
+      [otp, otpExpires, email]
+    );
+
+    await sendOtpEmail(email, otp);
+    res.status(200).json({ message: "OTP resent." });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error." });
+  }
+};
+
+module.exports = { register, verifyOtp, resendOtp, login };
+
+// module.exports = {
+//   login,
+// };
