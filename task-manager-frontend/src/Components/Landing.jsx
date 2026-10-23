@@ -37,7 +37,7 @@ const LandingPage = () => {
           </a>
 
           <a
-            href="/"
+            href="/register"
             className="rounded-[10px] bg-[#8CAF82] px-5 py-[11px] text-[14.5px] font-semibold text-white transition-all duration-200 hover:-translate-y-[1px] hover:bg-[#6B9463]"
           >
             Get started
@@ -64,7 +64,7 @@ const LandingPage = () => {
           {/* CTA */}
           <div className="mt-8 flex flex-col items-stretch gap-4 sm:flex-row sm:items-center">
             <a
-              href="/"
+              href="/register"
               className="inline-flex items-center justify-center rounded-[10px] bg-[#8CAF82] px-[26px] py-3.5 text-[15px] font-semibold text-white transition-all duration-200 hover:-translate-y-[1px] hover:bg-[#6B9463]"
             >
               Get started

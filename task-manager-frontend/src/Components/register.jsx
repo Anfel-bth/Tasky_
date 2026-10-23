@@ -67,7 +67,7 @@ const Register = () => {
         return;
       }
 
-      navigate(`/verify-otp?email=${encodeURIComponent(form.email)}`);
+      navigate(`/verifyotp?email=${encodeURIComponent(form.email)}`);
     } catch (err) {
       setError("Something went wrong. Please try again.");
       setLoading(false);

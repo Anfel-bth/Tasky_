@@ -3,6 +3,8 @@ const express = require("express");
 const cors = require("cors");
 const pool = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
+const taskRoutes = require("./routes/taskRoutes");
+const verifyToken = require("./middleware/verifyToken");
 
 const app = express();
 
@@ -35,7 +37,20 @@ app.get("/api/test-db", async (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/tasks", verifyToken, taskRoutes);
 
-app.listen(PORT, () => {
+async function ensurePriorityColumn() {
+  await pool.query(`
+    ALTER TABLE tasks
+    ADD COLUMN IF NOT EXISTS priority VARCHAR(10) DEFAULT 'medium'
+  `);
+}
+
+app.listen(PORT, async () => {
+  try {
+    await ensurePriorityColumn();
+  } catch (err) {
+    console.error("Failed to ensure tasks.priority column:", err.message);
+  }
   console.log(`Tasky server running on http://localhost:${PORT}`);
 });

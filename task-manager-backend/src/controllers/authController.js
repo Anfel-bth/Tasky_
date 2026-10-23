@@ -51,13 +51,31 @@ const login = async (req, res) => {
       });
     }
 
-    // 7. Login successful
+    // 7. Block login until the account has been verified
+    if (!user.is_verified) {
+      console.log("Login blocked - unverified account:", email);
+      return res.status(403).json({
+        message: "Please verify your email before logging in.",
+        email: user.email,
+      });
+    }
+
+    // 8. Issue a JWT, same shape as verifyOtp
+    const token = jwt.sign(
+      { id: user.user_id, email: user.email, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" },
+    );
+
+    // 9. Login successful
     res.status(200).json({
       message: "Login successful",
+      token,
       user: {
         user_id: user.user_id,
         user_name: user.user_name,
         email: user.email,
+        role: user.role,
       },
     });
   } catch (error) {
@@ -81,7 +99,7 @@ const register = async (req, res) => {
   try {
     const existing = await pool.query(
       "SELECT user_id, is_verified FROM users WHERE email = $1",
-      [email]
+      [email],
     );
 
     if (existing.rows.length > 0 && existing.rows[0].is_verified) {
@@ -98,13 +116,13 @@ const register = async (req, res) => {
         `UPDATE users
          SET user_name = $1, password = $2, otp_code = $3, otp_expires = $4, role = $5
          WHERE email = $6`,
-        [name, hashedPassword, otp, otpExpires, role || "user", email]
+        [name, hashedPassword, otp, otpExpires, role || "user", email],
       );
     } else {
       await pool.query(
         `INSERT INTO users (user_name, email, password, otp_code, otp_expires, role, is_verified)
          VALUES ($1, $2, $3, $4, $5, $6, FALSE)`,
-        [name, email, hashedPassword, otp, otpExpires, role || "user"]
+        [name, email, hashedPassword, otp, otpExpires, role || "user"],
       );
     }
 
@@ -138,13 +156,13 @@ const verifyOtp = async (req, res) => {
 
     await pool.query(
       `UPDATE users SET is_verified = TRUE, otp_code = NULL, otp_expires = NULL WHERE email = $1`,
-      [email]
+      [email],
     );
 
     const token = jwt.sign(
       { id: user.user_id, email: user.email, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: "7d" },
     );
 
     res.status(200).json({
@@ -180,7 +198,7 @@ const resendOtp = async (req, res) => {
 
     await pool.query(
       "UPDATE users SET otp_code = $1, otp_expires = $2 WHERE email = $3",
-      [otp, otpExpires, email]
+      [otp, otpExpires, email],
     );
 
     await sendOtpEmail(email, otp);
@@ -191,7 +209,11 @@ const resendOtp = async (req, res) => {
   }
 };
 
-module.exports = { register, verifyOtp, resendOtp, login };
+const logout = async (req, res) => {
+  res.status(200).json({ message: "Logged out successfully" });
+};
+
+module.exports = { register, verifyOtp, resendOtp, login, logout };
 
 // module.exports = {
 //   login,
