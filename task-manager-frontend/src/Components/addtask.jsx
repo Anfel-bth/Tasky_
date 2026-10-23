@@ -54,19 +54,17 @@ import { useEffect, useRef, useState } from "react";
  *   a single `YYYY-MM-DDTHH:mm:00` string; if only date is set, it sends
  *   just the date. Adjust `buildDueDate` below if your due_date column
  *   is a plain DATE and can't take a timestamp.
- * - priority: createTask doesn't destructure or store a priority field
- *   at all yet. It's still sent in the request body (harmless — Express
- *   just ignores unknown keys) but it will NOT be persisted until a
- *   priority column and insert are added server-side. Flagging this so
- *   it doesn't look like a silent bug later.
+ * - priority is stored by createTask in the tasks.priority column.
  * - auth: verifyToken reads the JWT from the Authorization header, so
  *   this sends `Authorization: Bearer <token>`, with the token read from
  *   localStorage under TOKEN_KEY (set near the top of this file).
- * - API_BASE: relative "/api/tasks" relies on the Vite dev proxy
- *   (server.proxy "/api" -> http://localhost:5000 in vite.config.js).
+ * - API_BASE comes from VITE_API_BASE (defaults to "/api", which the Vite
+ *   development proxy forwards to the local backend).
  */
 
-const API_BASE = "/api/tasks";
+import { API_BASE } from "../api.js";
+
+const TASKS_API = `${API_BASE}/tasks`;
 
 // The localStorage key your login code saves the JWT under. Check
 // DevTools → Application → Local Storage and change this if yours differs.
@@ -216,7 +214,7 @@ function AddTaskModal({ open: openProp, onClose, onSubmit }) {
     try {
       const token = localStorage.getItem(TOKEN_KEY);
 
-      const res = await fetch(API_BASE, {
+      const res = await fetch(TASKS_API, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -1,6 +1,7 @@
 // src/Layout/TaskList.jsx
 import { useCallback, useEffect, useState } from "react";
 import TaskDetail from "./TaskDetail.jsx";
+import { API_BASE } from "../api.js";
 
 /**
  * Task list card (same design as the "Today" card):
@@ -17,7 +18,7 @@ import TaskDetail from "./TaskDetail.jsx";
  * "tasks:changed" window event), so the new task shows up right away.
  */
 
-const API_BASE = "/api/tasks";
+const TASKS_API = `${API_BASE}/tasks`;
 const TOKEN_KEY = "token"; // same key as in AddTaskModal.jsx
 
 // Pill colours per category name (only used for display).
@@ -145,7 +146,7 @@ function TaskList({ title = "Inbox", view, groupByDay = false }) {
 
   const loadTasks = useCallback(async () => {
     try {
-      const url = view ? `${API_BASE}?view=${view}` : API_BASE;
+      const url = view ? `${TASKS_API}?view=${view}` : TASKS_API;
       const res = await fetch(url, { headers: authHeaders() });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
@@ -178,7 +179,7 @@ function TaskList({ title = "Inbox", view, groupByDay = false }) {
     );
 
     try {
-      const res = await fetch(`${API_BASE}/${task.task_id}`, {
+      const res = await fetch(`${TASKS_API}/${task.task_id}`, {
         method: "DELETE",
         headers: authHeaders(),
       });
@@ -205,7 +206,7 @@ function TaskList({ title = "Inbox", view, groupByDay = false }) {
     );
 
     try {
-      const res = await fetch(`${API_BASE}/${task.task_id}/status`, {
+      const res = await fetch(`${TASKS_API}/${task.task_id}/status`, {
         method: "PATCH",
         headers: authHeaders(),
         body: JSON.stringify({ status: nextStatus }),

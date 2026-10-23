@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { API_BASE } from "../api.js";
 
 const VerifyCode = () => {
   const [searchParams] = useSearchParams();
@@ -70,7 +71,7 @@ const VerifyCode = () => {
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:5000/api/auth/verify-otp", {
+      const res = await fetch(`${API_BASE}/auth/verify-otp`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -105,7 +106,7 @@ const VerifyCode = () => {
     setResending(true);
 
     try {
-      const res = await fetch("http://localhost:5000/api/auth/resend-otp", {
+      const res = await fetch(`${API_BASE}/auth/resend-otp`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

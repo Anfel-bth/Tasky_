@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
+import { API_BASE } from "../api.js";
 
 const Register = () => {
   const [form, setForm] = useState({
@@ -47,7 +48,7 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:5000/api/auth/register", {
+      const res = await fetch(`${API_BASE}/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

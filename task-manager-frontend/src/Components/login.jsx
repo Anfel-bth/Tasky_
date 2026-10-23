@@ -11,7 +11,7 @@
 //     try {
 //       setError(false);
 
-//       const response = await fetch("http://localhost:5000/api/auth/login", {
+//       const response = await fetch(`${API_BASE}/auth/login`, {
 //         method: "POST",
 //         headers: {
 //           "Content-Type": "application/json",
@@ -315,6 +315,7 @@
 // export default Login;
 import React, { useState } from "react";
 import logo from "../assets/logo.png";
+import { API_BASE } from "../api.js";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -326,7 +327,7 @@ const Login = () => {
     try {
       setError("");
 
-      const response = await fetch("http://localhost:5000/api/auth/login", {
+      const response = await fetch(`${API_BASE}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -1,5 +1,6 @@
 // src/Layout/useTaskCounts.js
 import { useCallback, useEffect, useState } from "react";
+import { API_BASE } from "../api.js";
 
 const TOKEN_KEY = "token"; // same key as the other files
 
@@ -13,7 +14,7 @@ export default function useTaskCounts() {
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch("/api/tasks/counts", {
+      const res = await fetch(`${API_BASE}/tasks/counts`, {
         headers: { Authorization: `Bearer ${localStorage.getItem(TOKEN_KEY)}` },
       });
       if (!res.ok) return;

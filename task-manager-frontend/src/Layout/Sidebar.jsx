@@ -5,9 +5,7 @@ import AddTaskModal from "../Components/addtask.jsx";
 import ProfileModal from "./ProfileModal.jsx";
 import useTaskCounts from "./useTaskCounts";
 import logo from "../assets/logo.png";
-
-// Vite environment variable
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
+import { API_BASE } from "../api.js";
 
 /**
  * Tasky Sidebar

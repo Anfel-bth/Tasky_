@@ -2,13 +2,28 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const pool = require("./config/db");
+const initializeDatabase = require("./config/initializeDatabase");
 const authRoutes = require("./routes/authRoutes");
 const taskRoutes = require("./routes/taskRoutes");
 const verifyToken = require("./middleware/verifyToken");
 
 const app = express();
 
-app.use(cors());
+const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:5173")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error(`Origin not allowed by CORS: ${origin}`));
+    },
+  }),
+);
 app.use(express.json());
 
 const PORT = process.env.PORT || 5000;
@@ -39,18 +54,20 @@ app.get("/api/test-db", async (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/tasks", verifyToken, taskRoutes);
 
-async function ensurePriorityColumn() {
-  await pool.query(`
-    ALTER TABLE tasks
-    ADD COLUMN IF NOT EXISTS priority VARCHAR(10) DEFAULT 'medium'
-  `);
+async function startServer() {
+  if (!process.env.JWT_SECRET) {
+    throw new Error("JWT_SECRET environment variable is required.");
+  }
+
+  await initializeDatabase();
+
+  app.listen(PORT, () => {
+    console.log(`Tasky server listening on port ${PORT}`);
+  });
 }
 
-app.listen(PORT, async () => {
-  try {
-    await ensurePriorityColumn();
-  } catch (err) {
-    console.error("Failed to ensure tasks.priority column:", err.message);
-  }
-  console.log(`Tasky server running on http://localhost:${PORT}`);
+startServer().catch(async (error) => {
+  console.error("Failed to start Tasky API:", error);
+  await pool.end();
+  process.exitCode = 1;
 });
